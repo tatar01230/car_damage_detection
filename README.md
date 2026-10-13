@@ -4,7 +4,7 @@ Fine-tuning COCO-pretrained YOLO models (YOLOv8n / YOLO11n / YOLO11s) to detect 
 **per car part** (e.g. front-bumper dent, headlight damage, windscreen damage), then turning the
 detections into a simple insurance-claim style report.
 
-> **Status:** work in progress (Day 5 of 7). Every number in this README comes from a run
+> **Status:** work in progress (Day 6 of 7). Every number in this README comes from a run
 > I actually performed. Sections marked `TODO` are not filled in yet.
 
 ## Problem & motivation
@@ -274,7 +274,41 @@ FPs). Counts below are from those samples, not the full test set.
    (`yolo11n-seg`) would also remove the box-extent ambiguity by outlining the damage itself.
 
 ## Severity rules
-TODO (Day 6)
+
+[`src/severity.py`](src/severity.py) turns detections into a claim-style severity. **These are
+hand-written heuristics, not learned, and not validated against repair costs or claim outcomes.**
+
+1. **Base level by damaged part**
+   | Level | Classes | Reason |
+   |---|---|---|
+   | minor | door, fender, front/rear bumper, bonnet, boot, quarter-panel, running-board dents | cosmetic body-panel repair |
+   | moderate | headlight, taillight, signlight, side mirror, rear windscreen, roof dent | part replacement; lights and mirrors are needed for road legality; roof repair is labor-intensive |
+   | severe | front windscreen, pillar dent | driver visibility / structural pillar |
+2. **Size:** a damage whose box covers ≥ 30% of the image is raised one level. 0.30 ≈ the 75th
+   percentile of training-box area (median 0.12).
+3. **Overall** = the most severe single damage, raised one level when there are ≥ 3 detections
+   (14.5% of training images have 3 or more boxes). No detections → `none`.
+
+Known weakness: area *relative to the image* depends on camera distance. A close-up of one small
+fender dent covers 43% of the frame and becomes "moderate". A real system would need the car's
+extent in the image (e.g. a car/part segmentation model) or physical measurements.
+
+**Claim report** ([`src/predict.py`](src/predict.py)), image in → annotated image + JSON:
+
+```json
+{
+  "image": "car_fender-69-....jpg",
+  "damages": [
+    {"type": "fender-dent", "confidence": 0.592, "bbox": [223, 113, 690, 503],
+     "area_ratio": 0.4271, "severity": "moderate"}
+  ],
+  "overall_severity": "moderate",
+  "conf_threshold": 0.3,
+  "note": "Severity levels are rule-based heuristics (src/severity.py), not learned or validated against repair costs."
+}
+```
+
+The default confidence threshold of 0.30 maximizes F1 on the val split.
 
 ## Setup
 
@@ -312,7 +346,22 @@ python -m src.evaluate                 # test metrics, latency, per-class AP -> 
 python -m src.error_analysis --run E4  # FP/FN categories + example sheets -> reports/error_analysis/
 ```
 
-Demo: TODO (Day 6)
+**Predict / demo.**
+
+```bash
+python -m src.predict car.jpg --weights runs/E4/weights/best.pt   # -> outputs/car_annotated.jpg + car.json
+python app/app.py                                                 # Gradio demo at http://127.0.0.1:7860
+```
+
+Without `--weights`, `predict.py` and the app use `weights/car_damage_yolo11n_416.pt` if it
+exists. Otherwise they download the weights from the Hugging Face model repo named in the
+`HF_MODEL_REPO` environment variable.
+
+**Publish to Hugging Face** (model repo + Gradio Space; needs a write `HF_TOKEN` in `.env`):
+
+```bash
+python -m src.publish_hf --user <hf-username>
+```
 
 ## Limitations
 - **One seed per experiment.** Differences of about 0.01 mAP50-95 between runs are within noise.
@@ -324,7 +373,8 @@ Demo: TODO (Day 6)
 - **Rare classes are effectively unsupported.** `pillar-dent` and `Signlight-Damage` were never
   detected on test (3-4 boxes each).
 - **Latency numbers are from a desktop CPU/GPU.** A Hugging Face free CPU Space will be slower.
-- TODO (Day 6-7)
+- **Severity is rule-based** and uses box area relative to the image, which depends on camera distance.
+- TODO (Day 7)
 
 ## What I learned
 TODO

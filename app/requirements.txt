@@ -1,0 +1,3 @@
+# Hugging Face Space dependencies (gradio itself comes from sdk_version in README.md)
+ultralytics==8.4.176
+huggingface_hub>=0.30
