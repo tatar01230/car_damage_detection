@@ -4,7 +4,7 @@ Fine-tuning COCO-pretrained YOLO models (YOLOv8n / YOLO11n / YOLO11s) to detect 
 **per car part** (e.g. front-bumper dent, headlight damage, windscreen damage), then turning the
 detections into a simple insurance-claim style report.
 
-> **Status:** work in progress (Day 3 of 7). Every number in this README comes from a run
+> **Status:** work in progress (Day 4 of 7). Every number in this README comes from a run
 > I actually performed. Sections marked `TODO` are not filled in yet.
 
 ## Problem & motivation
@@ -143,7 +143,28 @@ Design choices:
   re-runs can differ slightly in the last decimals.
 
 ## Results
-TODO (Day 5)
+
+### Training runs (validation split)
+
+From [`reports/experiments.csv`](reports/experiments.csv). Setup: Colab Tesla T4, 60 epochs, seed 42,
+best checkpoint by val mAP50-95. Δ is relative to E2 (YOLO11n, 640), the reference for E4 and E5.
+
+| ID | Model | Setting | val mAP50 | val mAP50-95 | Best epoch | Train time (min) | best.pt (MB) |
+|---|---|---|---|---|---|---|---|
+| E1 | YOLOv8n | defaults | 0.438 (−0.012) | 0.202 (−0.006) | 51 | 31.3 | 6.2 |
+| E2 | YOLO11n | defaults | 0.450 | 0.208 | 31 | 32.6 | 5.2 |
+| E3 | YOLO11s | defaults | 0.466 (+0.016) | 0.212 (+0.004) | 60 | 37.0 | 18.3 |
+| E4 | YOLO11n | imgsz 416 | **0.479 (+0.029)** | **0.223 (+0.015)** | 40 | **22.3** | 5.2 |
+| E5 | YOLO11n | freeze=10 | 0.395 (−0.055) | 0.187 (−0.021) | 34 | 31.0 | 5.2 |
+
+Caveat: one seed per run and a 424-image val split. Val mAP50-95 moves by ±0.006–0.009 (std)
+from epoch to epoch in epochs 40–60, and picking the single best epoch on val is optimistic. The
+mean over epochs 40–60 is a steadier comparison: E1 0.194, E2 0.194, E3 0.199, **E4 0.203**,
+E5 0.171. E4 stays ahead on that measure too, but by a smaller margin (+0.009 vs E2). Training
+curves show val box/DFL loss bottoming out around epochs 10–28 and then rising, while train
+loss keeps falling: mild overfitting on localization. The drop in train loss at epoch 50 is
+ultralytics switching mosaic augmentation off for the last 10 epochs (`close_mosaic=10`).
+Final numbers on the held-out test split: TODO (Day 5).
 
 ## Error analysis
 TODO (Day 5)
@@ -183,7 +204,11 @@ python -m src.train --exp configs/experiments/E2.yaml --project runs/smoke --res
 Evaluate / demo: TODO (Day 5–6)
 
 ## Limitations
-TODO
+- **One seed per experiment.** Differences of about 0.01 mAP50-95 between runs are within noise.
+  Repeating E2/E4 with more seeds was considered and skipped to stay within the 7-day timeline.
+- **Equal epoch budget.** YOLO11s (E3) was still at its best at the final epoch (60), so it may be
+  under-trained relative to the nano models.
+- TODO (Day 5–7)
 
 ## What I learned
 TODO

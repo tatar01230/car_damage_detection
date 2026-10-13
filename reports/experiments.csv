@@ -1,0 +1,6 @@
+id,model,purpose,overrides,epochs,imgsz,batch,seed,best_epoch,val_mAP50,val_mAP50_95,val_precision,val_recall,train_time_min,best_pt_mb,gpu,ultralytics,torch,git_commit,extra_overrides
+E1,yolov8n.pt,"baseline (YOLOv8n, full fine-tune, defaults)",{},60,640,16,42,51,0.438,0.202,0.5355,0.4228,31.3,6.2,Tesla T4,8.4.176,2.11.0+cu130,911c9b2,
+E2,yolo11n.pt,"newer architecture vs baseline (YOLO11n, full fine-tune, defaults)",{},60,640,16,42,31,0.4502,0.2078,0.4903,0.4798,32.6,5.2,Tesla T4,8.4.176,2.11.0+cu130,911c9b2,
+E3,yolo11s.pt,"model size vs accuracy/speed (YOLO11s, full fine-tune, defaults)",{},60,640,16,42,60,0.4657,0.2119,0.6174,0.4231,37.0,18.3,Tesla T4,8.4.176,2.11.0+cu130,911c9b2,
+E4,yolo11n.pt,training config - imgsz 416 vs 640 (compare with E2),"{""imgsz"": 416}",60,416,16,42,40,0.4794,0.223,0.6169,0.4382,22.3,5.2,Tesla T4,8.4.176,2.11.0+cu130,911c9b2,
+E5,yolo11n.pt,frozen backbone vs full fine-tune (compare with E2),"{""freeze"": 10}",60,640,16,42,34,0.395,0.1866,0.5035,0.4142,31.0,5.2,Tesla T4,8.4.176,2.11.0+cu130,911c9b2,
