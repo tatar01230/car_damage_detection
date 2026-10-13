@@ -150,12 +150,14 @@ def main() -> None:
             shutil.copy2(src, args.out / split / "images" / src.name)
             lines = [to_yolo_line(b["cls"], b["xyxy"]) for b in rec["kept_boxes"]]
             (args.out / split / "labels" / f"{src.stem}.txt").write_text("\n".join(lines) + "\n")
-            manifest.append((split, src.name, rec["image"], rec["split"]))
+            # POSIX paths so the manifest (and its checksum) is identical on Windows and Colab
+            manifest.append((split, src.name, src.as_posix(), rec["split"]))
 
     with open(args.out / "manifest.csv", "w", newline="") as f:
         csv.writer(f).writerows([("split", "file", "raw_path", "raw_split"), *manifest])
     with open(args.out / "removed.csv", "w", newline="") as f:
-        csv.writer(f).writerows([("raw_path", "what", "reason"), *removed])
+        rows = [(Path(p).as_posix(), what, reason.replace("\\", "/")) for p, what, reason in removed]
+        csv.writer(f).writerows([("raw_path", "what", "reason"), *rows])
 
     data_yaml = {
         "path": args.out.as_posix(),  # relative to the repo root (run commands from there)

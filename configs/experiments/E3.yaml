@@ -1,0 +1,4 @@
+id: E3
+model: yolo11s.pt
+purpose: model size vs accuracy/speed (YOLO11s, full fine-tune, defaults)
+train: {}

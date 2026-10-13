@@ -4,7 +4,7 @@ Fine-tuning COCO-pretrained YOLO models (YOLOv8n / YOLO11n / YOLO11s) to detect 
 **per car part** (e.g. front-bumper dent, headlight damage, windscreen damage), then turning the
 detections into a simple insurance-claim style report.
 
-> **Status:** work in progress (Day 2 of 7). Every number in this README comes from a run
+> **Status:** work in progress (Day 3 of 7). Every number in this README comes from a run
 > I actually performed. Sections marked `TODO` are not filled in yet.
 
 ## Problem & motivation
@@ -104,7 +104,37 @@ The original test split was effectively unusable: 78 images, but only 12 boxes.
 ![Class distribution after cleaning](reports/data_audit/clean/class_distribution.png)
 
 ## Method
-TODO (Day 3–4)
+
+**Transfer learning.** Every model starts from COCO-pretrained weights. COCO has 118k images
+that already include cars, so the early layers have learned generic features such as edges,
+textures, reflections and car shapes. With only ~2k training images, training from scratch would
+overfit. Fine-tuning reuses those features and mainly learns the new task: 16 damage classes
+replace COCO's 80-class head.
+
+**Experiments.** All runs use the same cleaned split, `seed=42`, `deterministic=True`, batch 16
+and the same budget of **60 epochs** with early stopping disabled. Settings come from
+[`configs/train_base.yaml`](configs/train_base.yaml). Each experiment file in
+[`configs/experiments/`](configs/experiments) changes one thing:
+
+| ID | Model | Setting | Purpose |
+|---|---|---|---|
+| E1 | YOLOv8n | full fine-tune, defaults | baseline |
+| E2 | YOLO11n | full fine-tune, defaults | newer architecture vs baseline |
+| E3 | YOLO11s | full fine-tune, defaults | model size vs accuracy/speed |
+| E4 | YOLO11n | `imgsz=416` (vs 640) | 58% of images are < 320 px, so 640 mostly upsamples. Does a smaller input keep accuracy at lower cost? |
+| E5 | YOLO11n | `freeze=10` (backbone frozen) | frozen backbone vs full fine-tune |
+
+Design choices:
+- **60 epochs, same for every run.** This is enough for fine-tuning to converge on ~2k images, and
+  five runs still fit into free Colab sessions. Disabling early stopping keeps the comparison fair:
+  every run gets the same budget, and the best epoch is chosen on val.
+- **Model selection uses val only.** The test split is touched once, in the final evaluation (Day 5).
+- **`cache=disk`, not `ram`.** Ultralytics warns that RAM caching can make training non-deterministic.
+- **Colab realities.** Runs are written to Google Drive. If a session dies, re-running the same
+  command resumes from `last.pt`, and finished runs are skipped. Each run writes `summary.json`,
+  and one row per experiment goes to `experiments.csv`.
+- **GPU determinism caveat.** Even with fixed seeds, some CUDA kernels are not bit-exact, so
+  re-runs can differ slightly in the last decimals.
 
 ## Results
 TODO (Day 5)
@@ -132,7 +162,19 @@ python -m src.data_audit --data data/clean/car-damage-v2 --out reports/data_audi
 ```
 
 ## Reproduce
-TODO: train on Colab, evaluate, run demo
+
+**Train (Google Colab, free T4).** Open [`notebooks/train_colab.ipynb`](notebooks/train_colab.ipynb)
+in Colab and add a `ROBOFLOW_API_KEY` secret. The notebook clones this repo, rebuilds the cleaned
+split (checking it against the expected manifest checksum), and runs
+`python -m src.train --exp configs/experiments/<ID>.yaml` for E1–E5.
+
+Local smoke test (a few minutes, checks the pipeline end to end):
+
+```bash
+python -m src.train --exp configs/experiments/E2.yaml --project runs/smoke --results-csv runs/smoke/experiments.csv --set epochs=2 fraction=0.1
+```
+
+Evaluate / demo: TODO (Day 5–6)
 
 ## Limitations
 TODO

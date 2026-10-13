@@ -1,0 +1,4 @@
+id: E1
+model: yolov8n.pt
+purpose: baseline (YOLOv8n, full fine-tune, defaults)
+train: {}

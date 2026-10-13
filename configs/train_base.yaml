@@ -1,0 +1,12 @@
+# Shared training settings for every experiment (E1-E5).
+# Experiment files in configs/experiments/ override only the setting they test.
+data: configs/data.yaml
+epochs: 60          # same budget for all runs; fits 5 runs into free Colab sessions (see README)
+patience: 0         # 0 disables early stopping, so every run trains for exactly `epochs`
+imgsz: 640
+batch: 16
+seed: 42
+deterministic: true
+workers: 2          # free Colab has 2 CPU cores
+cache: disk         # decoded images cached as .npy; ultralytics flags cache='ram' as non-deterministic
+plots: true

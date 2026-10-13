@@ -1,0 +1,4 @@
+id: E2
+model: yolo11n.pt
+purpose: newer architecture vs baseline (YOLO11n, full fine-tune, defaults)
+train: {}

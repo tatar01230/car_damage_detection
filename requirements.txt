@@ -6,5 +6,6 @@ ultralytics==8.4.176
 roboflow>=1.7
 python-dotenv>=1.0
 imagehash>=4.3
+numpy>=2.0  # np.bitwise_count in the duplicate finder
 pandas>=2.2
 matplotlib>=3.9

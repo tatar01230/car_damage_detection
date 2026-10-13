@@ -1,0 +1,6 @@
+id: E5
+model: yolo11n.pt
+# freeze=10 freezes layers 0-9 (backbone up to and including SPPF); C2PSA, neck and head train.
+purpose: frozen backbone vs full fine-tune (compare with E2)
+train:
+  freeze: 10
