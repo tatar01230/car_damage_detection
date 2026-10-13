@@ -1,0 +1,21 @@
+path: data/clean/car-damage-v2
+train: train/images
+val: val/images
+test: test/images
+names:
+  0: Front-Windscreen-Damage
+  1: Headlight-Damage
+  2: Rear-windscreen-Damage
+  3: RunningBoard-Dent
+  4: Sidemirror-Damage
+  5: Signlight-Damage
+  6: Taillight-Damage
+  7: bonnet-dent
+  8: boot-dent
+  9: doorouter-dent
+  10: fender-dent
+  11: front-bumper-dent
+  12: pillar-dent
+  13: quaterpanel-dent
+  14: rear-bumper-dent
+  15: roof-dent

@@ -1,0 +1,133 @@
+{
+  "images_per_split": {
+    "train": 1993,
+    "val": 421,
+    "test": 407
+  },
+  "boxes_per_split": {
+    "train": 3148,
+    "val": 681,
+    "test": 681
+  },
+  "class_counts": {
+    "train": {
+      "Front-Windscreen-Damage": 89,
+      "Headlight-Damage": 185,
+      "Rear-windscreen-Damage": 122,
+      "RunningBoard-Dent": 78,
+      "Sidemirror-Damage": 56,
+      "Signlight-Damage": 15,
+      "Taillight-Damage": 75,
+      "bonnet-dent": 419,
+      "boot-dent": 66,
+      "doorouter-dent": 534,
+      "fender-dent": 342,
+      "front-bumper-dent": 528,
+      "pillar-dent": 19,
+      "quaterpanel-dent": 245,
+      "rear-bumper-dent": 283,
+      "roof-dent": 92
+    },
+    "val": {
+      "Front-Windscreen-Damage": 19,
+      "Headlight-Damage": 40,
+      "Rear-windscreen-Damage": 27,
+      "RunningBoard-Dent": 17,
+      "Sidemirror-Damage": 12,
+      "Signlight-Damage": 4,
+      "Taillight-Damage": 16,
+      "bonnet-dent": 90,
+      "boot-dent": 15,
+      "doorouter-dent": 115,
+      "fender-dent": 74,
+      "front-bumper-dent": 114,
+      "pillar-dent": 4,
+      "quaterpanel-dent": 53,
+      "rear-bumper-dent": 61,
+      "roof-dent": 20
+    },
+    "test": {
+      "Front-Windscreen-Damage": 19,
+      "Headlight-Damage": 40,
+      "Rear-windscreen-Damage": 26,
+      "RunningBoard-Dent": 17,
+      "Sidemirror-Damage": 13,
+      "Signlight-Damage": 3,
+      "Taillight-Damage": 17,
+      "bonnet-dent": 90,
+      "boot-dent": 14,
+      "doorouter-dent": 115,
+      "fender-dent": 74,
+      "front-bumper-dent": 114,
+      "pillar-dent": 5,
+      "quaterpanel-dent": 53,
+      "rear-bumper-dent": 61,
+      "roof-dent": 20
+    }
+  },
+  "class_counts_total": {
+    "Front-Windscreen-Damage": 127,
+    "Headlight-Damage": 265,
+    "Rear-windscreen-Damage": 175,
+    "RunningBoard-Dent": 112,
+    "Sidemirror-Damage": 81,
+    "Signlight-Damage": 22,
+    "Taillight-Damage": 108,
+    "bonnet-dent": 599,
+    "boot-dent": 95,
+    "doorouter-dent": 764,
+    "fender-dent": 490,
+    "front-bumper-dent": 756,
+    "pillar-dent": 28,
+    "quaterpanel-dent": 351,
+    "rear-bumper-dent": 405,
+    "roof-dent": 132
+  },
+  "imbalance_ratio_max_min": 34.7,
+  "image_issues": {},
+  "box_issues": {},
+  "orphan_labels": 0,
+  "duplicates": {
+    "near_duplicate_pairs": 0,
+    "groups": 0,
+    "images_in_groups": 0,
+    "redundant_images": 0,
+    "cross_split_groups": 0,
+    "groups_with_label_conflicts": 0
+  },
+  "image_sizes_top5": [
+    [
+      "259x194",
+      452
+    ],
+    [
+      "275x183",
+      199
+    ],
+    [
+      "1600x1200",
+      194
+    ],
+    [
+      "300x168",
+      96
+    ],
+    [
+      "800x533",
+      91
+    ]
+  ],
+  "unique_image_sizes": 566,
+  "aspect_ratio": {
+    "min": 0.46,
+    "median": 1.34,
+    "max": 3.39
+  },
+  "box_area_ratio": {
+    "p05": 0.0195,
+    "median": 0.1256,
+    "p95": 0.6239,
+    "tiny_share": 0.0
+  },
+  "boxes_per_image_mean": 1.6
+}

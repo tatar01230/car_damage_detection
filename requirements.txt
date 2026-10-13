@@ -1,0 +1,10 @@
+# PyTorch is NOT listed here on purpose: install the CUDA build for your machine first
+# (see README "Setup"). Colab already ships with a CUDA build of torch.
+# ultralytics is pinned exactly so local and Colab runs use the same training code.
+# The remaining packages get exact pins in the final review (Day 7) via `pip freeze`.
+ultralytics==8.4.176
+roboflow>=1.7
+python-dotenv>=1.0
+imagehash>=4.3
+pandas>=2.2
+matplotlib>=3.9
