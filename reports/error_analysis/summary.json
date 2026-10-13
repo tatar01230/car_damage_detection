@@ -1,0 +1,62 @@
+{
+  "run": "E4",
+  "conf_threshold": 0.3,
+  "val_f1_at_threshold": 0.521,
+  "test_tp": 338,
+  "test_precision": 0.573,
+  "test_recall": 0.496,
+  "test_f1": 0.532,
+  "false_positives": {
+    "background": 108,
+    "wrong_class": 68,
+    "localization": 64,
+    "duplicate": 12
+  },
+  "false_negatives": {
+    "missed": 224,
+    "localization": 96,
+    "wrong_class": 23
+  },
+  "top_confusions_gt_to_pred": [
+    [
+      "rear-bumper-dent -> front-bumper-dent",
+      5
+    ],
+    [
+      "rear-bumper-dent -> Rear-windscreen-Damage",
+      2
+    ],
+    [
+      "boot-dent -> bonnet-dent",
+      2
+    ],
+    [
+      "quaterpanel-dent -> fender-dent",
+      2
+    ],
+    [
+      "roof-dent -> bonnet-dent",
+      2
+    ],
+    [
+      "rear-bumper-dent -> Taillight-Damage",
+      1
+    ],
+    [
+      "front-bumper-dent -> Sidemirror-Damage",
+      1
+    ],
+    [
+      "Taillight-Damage -> Headlight-Damage",
+      1
+    ],
+    [
+      "boot-dent -> doorouter-dent",
+      1
+    ],
+    [
+      "Sidemirror-Damage -> bonnet-dent",
+      1
+    ]
+  ]
+}

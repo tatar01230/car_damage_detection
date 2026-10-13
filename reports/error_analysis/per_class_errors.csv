@@ -1,0 +1,17 @@
+class,TP,FN,FP,recall,precision
+Signlight-Damage,0,3,0,0.0,
+pillar-dent,0,4,0,0.0,
+boot-dent,4,11,2,0.27,0.67
+RunningBoard-Dent,5,12,8,0.29,0.38
+roof-dent,6,14,10,0.3,0.38
+Headlight-Damage,13,27,22,0.32,0.37
+Front-Windscreen-Damage,6,13,4,0.32,0.6
+rear-bumper-dent,21,40,8,0.34,0.72
+quaterpanel-dent,19,34,24,0.36,0.44
+fender-dent,40,34,32,0.54,0.56
+Rear-windscreen-Damage,14,12,3,0.54,0.82
+front-bumper-dent,63,51,53,0.55,0.54
+bonnet-dent,51,39,38,0.57,0.57
+doorouter-dent,75,41,40,0.65,0.65
+Sidemirror-Damage,9,4,4,0.69,0.69
+Taillight-Damage,12,4,4,0.75,0.75

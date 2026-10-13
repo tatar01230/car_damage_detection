@@ -1,0 +1,6 @@
+id,model,setting,imgsz,test_mAP50,test_mAP50_95,test_precision,test_recall,params_M,GFLOPs,best_pt_mb,train_time_min,train_gpu,gpu_ms,cpu_ms,eval_gpu,eval_cpu
+E1,yolov8n.pt,baseline,640,0.4337,0.2053,0.4624,0.4327,3.1416,8.7691,6.2008,31.3,Tesla T4,7.6322,28.1453,NVIDIA GeForce RTX 4070 SUPER,13th Gen Intel(R) Core(TM) i5-13400F (6 threads)
+E2,yolo11n.pt,newer architecture vs baseline,640,0.4154,0.2132,0.5177,0.4139,2.6085,6.5873,5.2464,32.6,Tesla T4,9.2613,28.4222,NVIDIA GeForce RTX 4070 SUPER,13th Gen Intel(R) Core(TM) i5-13400F (6 threads)
+E3,yolo11s.pt,model size vs accuracy/speed,640,0.4395,0.2112,0.5497,0.4302,9.434,21.6987,18.2896,37.0,Tesla T4,9.8127,58.4699,NVIDIA GeForce RTX 4070 SUPER,13th Gen Intel(R) Core(TM) i5-13400F (6 threads)
+E4,yolo11n.pt,training config - imgsz 416 vs 640,416,0.43,0.2072,0.5503,0.4316,2.6085,2.7681,5.2246,22.3,Tesla T4,9.0833,16.4275,NVIDIA GeForce RTX 4070 SUPER,13th Gen Intel(R) Core(TM) i5-13400F (6 threads)
+E5,yolo11n.pt,frozen backbone vs full fine-tune,640,0.3795,0.1878,0.603,0.3544,2.6085,6.5873,5.2464,31.0,Tesla T4,9.5836,26.766,NVIDIA GeForce RTX 4070 SUPER,13th Gen Intel(R) Core(TM) i5-13400F (6 threads)

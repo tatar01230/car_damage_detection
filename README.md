@@ -4,7 +4,7 @@ Fine-tuning COCO-pretrained YOLO models (YOLOv8n / YOLO11n / YOLO11s) to detect 
 **per car part** (e.g. front-bumper dent, headlight damage, windscreen damage), then turning the
 detections into a simple insurance-claim style report.
 
-> **Status:** work in progress (Day 4 of 7). Every number in this README comes from a run
+> **Status:** work in progress (Day 5 of 7). Every number in this README comes from a run
 > I actually performed. Sections marked `TODO` are not filled in yet.
 
 ## Problem & motivation
@@ -164,10 +164,114 @@ E5 0.171. E4 stays ahead on that measure too, but by a smaller margin (+0.009 vs
 curves show val box/DFL loss bottoming out around epochs 10–28 and then rising, while train
 loss keeps falling: mild overfitting on localization. The drop in train loss at epoch 50 is
 ultralytics switching mosaic augmentation off for the last 10 epochs (`close_mosaic=10`).
-Final numbers on the held-out test split: TODO (Day 5).
+Final numbers on the held-out test split are below.
+
+### Test split (final evaluation)
+
+From [`reports/evaluation/test_metrics.csv`](reports/evaluation/test_metrics.csv), produced by
+`python -m src.evaluate`. 427 test images, 681 boxes, never used for any training or model-selection
+decision. Each model was evaluated at its training `imgsz`. Latency is batch size 1, end-to-end
+(preprocess + inference + NMS), on images already in memory. It is the minimum over 5 interleaved
+rounds of the median over 200 (GPU) / 100 (CPU) images, on an RTX 4070 SUPER and an i5-13400F
+(6 threads).
+
+| ID | Model | imgsz | test mAP50 | test mAP50-95 | P | R | CPU ms/img | GPU ms/img | Params (M) | GFLOPs | best.pt (MB) | Train (min, T4) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| E1 | YOLOv8n | 640 | 0.434 | 0.205 | 0.462 | 0.433 | 28.1 | 7.6 | 3.14 | 8.8 | 6.2 | 31.3 |
+| E2 | YOLO11n | 640 | 0.415 | **0.213** | 0.518 | 0.414 | 28.4 | 9.3 | 2.61 | 6.6 | 5.2 | 32.6 |
+| E3 | YOLO11s | 640 | **0.440** | 0.211 | 0.550 | 0.430 | 58.5 | 9.8 | 9.43 | 21.7 | 18.3 | 37.0 |
+| **E4** | **YOLO11n** | **416** | 0.430 | 0.207 | 0.550 | 0.432 | **16.4** | 9.1 | 2.61 | **2.8** | 5.2 | **22.3** |
+| E5 | YOLO11n, freeze=10 | 640 | 0.380 | 0.188 | 0.603 | 0.354 | 26.8 | 9.6 | 2.61 | 6.6 | 5.2 | 31.0 |
+
+![Accuracy vs speed](reports/evaluation/accuracy_vs_speed.png)
+
+**Reading the table**
+
+- **E1-E4 are statistically tied on accuracy.** Test mAP50-95 spans 0.205-0.213 (< 0.01), and the
+  ranking differs from val: E4 led on val, E2 leads on test. That is what single-seed noise looks
+  like, and it confirms that the val lead from best-epoch selection was optimistic.
+- **Only E5 is clearly worse:** -0.025 mAP50-95 and -0.06 recall vs E2 (see below).
+- **Speed separates the models.** On CPU, YOLO11s costs ~2x the nano models, and nano at 416 is
+  ~1.7x faster than at 640 (2.4x fewer FLOPs). On the RTX 4070 every model takes ~8-10 ms. That is
+  dominated by Python, preprocessing and NMS overhead, not the network, so GPU latency does not
+  distinguish them. E2 and E5 are the same architecture, and their CPU numbers (28.4 vs 26.8 ms)
+  show the remaining measurement noise (about +/-2 ms).
+- **Measurement note.** With default settings, CPU latency of the *same* model varied up to 4x between
+  runs on this Windows desktop: ultralytics resets torch threads to 8, plus background throttling.
+  Pinning threads and taking the min over interleaved rounds made it repeatable.
+
+**E5: frozen backbone vs full fine-tune.** Freezing layers 0-9 (the backbone up to SPPF) lowered test
+mAP50-95 from 0.213 to 0.188 and recall from 0.41 to 0.35. Precision went up (0.60), so the frozen
+model is more conservative: it only fires on patterns its COCO features already separate well.
+Training time barely changed (31.0 vs 32.6 min on a T4) because these runs appear to be input-bound
+(2 CPU workers, per-epoch validation), not backward-pass-bound. E3 being 3.6x bigger but only 13%
+slower supports that. This is an inference, not a measurement. *When to freeze:* very small datasets
+(a few hundred images) where full fine-tuning overfits, a target domain close to the pretraining
+data, limited GPU memory, or many tasks sharing one backbone. *When to fine-tune fully:* a few
+thousand images whose visual domain differs from COCO (damage texture, crumpled metal, glass
+cracks), which is this case.
+
+**Final model: E4 (YOLO11n, imgsz 416).** Its accuracy is within noise of the best run (-0.006
+mAP50-95 vs E2, +0.015 mAP50), and it is the fastest on CPU (16.4 ms vs 28.4 ms), has the fewest
+FLOPs, is 5.2 MB, and trained 32% faster. The demo will run on CPU (free Hugging Face Space), so CPU
+latency is the deciding factor. YOLO11s brings no measurable accuracy gain for 3.6x the size and
+~3.5x the CPU latency of E4.
 
 ## Error analysis
-TODO (Day 5)
+
+Run on the final model (E4) with `python -m src.error_analysis --run E4`. Outputs are in
+[`reports/error_analysis/`](reports/error_analysis). The confidence threshold was chosen to maximize
+F1 on **val** (conf = 0.30, val F1 0.52) and then applied to test. Predictions were matched to ground
+truth per image (same class, IoU >= 0.5).
+
+**Test at conf 0.30:** 338 TP, precision 0.57, recall 0.50, F1 0.53.
+
+| Error type | Count | Meaning |
+|---|---|---|
+| FN missed | 224 | no prediction overlaps the ground-truth box (IoU < 0.1) |
+| FN localization | 96 | found roughly, but IoU < 0.5 |
+| FN wrong class | 23 | covered by a box of another class |
+| FP background | 108 | prediction overlaps no ground-truth box |
+| FP wrong class | 68 | overlaps a box of another class |
+| FP localization | 64 | right class, IoU 0.1-0.5 |
+| FP duplicate | 12 | second box on an already-matched object |
+
+Top class confusions (ground truth -> prediction): rear-bumper -> front-bumper (5),
+rear-bumper -> rear-windscreen (2), boot -> bonnet (2), quarter-panel -> fender (2), roof -> bonnet (2).
+
+Per class (see [`per_class_errors.csv`](reports/error_analysis/per_class_errors.csv) and
+[`per_class_ap.png`](reports/evaluation/per_class_ap.png)): `pillar-dent` (4 test boxes) and
+`Signlight-Damage` (3) were never detected. Recall is <= 0.36 for `boot`, `RunningBoard`, `roof`,
+`Headlight`, `Front-Windscreen`, `rear-bumper` and `quaterpanel`. `Headlight-Damage` has 265 boxes
+but AP50-95 of only 0.09, because its boxes usually sit inside a `front-bumper-dent` box.
+
+**Causes, from visually reviewing the example sheets** (16 images each, highest-confidence first for
+FPs). Counts below are from those samples, not the full test set.
+
+| Cause | Where it shows up | Example sheet |
+|---|---|---|
+| **Missing labels: the model is right, the label set is incomplete.** About 7 of the 16 top "background" FPs are real damage on a part that was not annotated (e.g. a broken side mirror inside a large door box, a damaged headlight or bumper with no box). | FP background | [`fp_background.jpg`](reports/error_analysis/fp_background.jpg) |
+| **Secondary damage next to a detected part.** About 6 of the 16 sampled misses: the model finds the main damaged panel but not the neighbouring one (e.g. bumper found, quarter panel missed). | FN missed | [`fn_missed.jpg`](reports/error_analysis/fn_missed.jpg) |
+| **Subtle, low-contrast damage.** About 5 of 16 misses: shallow dents and light scratches with no strong texture, some on low-resolution thumbnails; plus one night photo. | FN missed | [`fn_missed.jpg`](reports/error_analysis/fn_missed.jpg) |
+| **Close-ups without context.** Front vs rear windscreen, front vs rear bumper, boot vs bonnet (a Porsche 911!), taillight vs signlight: from a tight crop even a human cannot tell which part it is. | FP/FN wrong class | [`fp_wrong_class.jpg`](reports/error_analysis/fp_wrong_class.jpg) |
+| **Undefined box extent.** One box per dent vs one per panel is labelled inconsistently. The model often draws the whole panel where the label covers one dent, or the reverse, so IoU < 0.5 although the detection is useful. This is also why mAP50-95 is low. | FN/FP localization | [`fn_localization.jpg`](reports/error_analysis/fn_localization.jpg) |
+| **True false alarms.** Reflections on shiny panels, intact panels next to damage, a person's face. About 4 of the 16 top background FPs. | FP background | [`fp_background.jpg`](reports/error_analysis/fp_background.jpg) |
+
+**Concrete fixes, highest expected impact first**
+
+1. **Fix the labels before changing the model.** E1-E4 perform the same, so the model is not the
+   bottleneck. Write an annotation guideline (one box per damaged part, covering the damaged area
+   only; label every damaged part) and re-label at least the test set, then the training images
+   with the most FP/FN. Part of the measured error is label noise, so true accuracy is likely higher
+   than reported.
+2. **Simplify the class scheme.** Merge classes that cannot be told apart or are too rare:
+   `Signlight` -> `Taillight/Headlight`, `pillar-dent` -> `doorouter-dent`, front/rear windscreen
+   -> `windscreen`. Or split the problem into *damage type* + *car part* (two heads or two models),
+   which is closer to how a claim is written.
+3. **Add context.** Collect or keep wider shots so front vs rear is decidable. For close-ups, a
+   separate car-part segmentation model can provide the part label.
+4. **Resolution for subtle dents.** Prefer higher-resolution sources. A segmentation model
+   (`yolo11n-seg`) would also remove the box-extent ambiguity by outlining the damage itself.
 
 ## Severity rules
 TODO (Day 6)
@@ -201,14 +305,26 @@ Local smoke test (a few minutes, checks the pipeline end to end):
 python -m src.train --exp configs/experiments/E2.yaml --project runs/smoke --results-csv runs/smoke/experiments.csv --set epochs=2 fraction=0.1
 ```
 
-Evaluate / demo: TODO (Day 5–6)
+**Evaluate (local GPU/CPU).** Put the trained runs in `runs/E1` ... `runs/E5` (download from Google Drive), then:
+
+```bash
+python -m src.evaluate                 # test metrics, latency, per-class AP -> reports/evaluation/
+python -m src.error_analysis --run E4  # FP/FN categories + example sheets -> reports/error_analysis/
+```
+
+Demo: TODO (Day 6)
 
 ## Limitations
 - **One seed per experiment.** Differences of about 0.01 mAP50-95 between runs are within noise.
   Repeating E2/E4 with more seeds was considered and skipped to stay within the 7-day timeline.
 - **Equal epoch budget.** YOLO11s (E3) was still at its best at the final epoch (60), so it may be
   under-trained relative to the nano models.
-- TODO (Day 5–7)
+- **Label noise caps the measurable accuracy.** Missing annotations and an inconsistent box extent
+  are visible in the error analysis, so test metrics partly measure label quality.
+- **Rare classes are effectively unsupported.** `pillar-dent` and `Signlight-Damage` were never
+  detected on test (3-4 boxes each).
+- **Latency numbers are from a desktop CPU/GPU.** A Hugging Face free CPU Space will be slower.
+- TODO (Day 6-7)
 
 ## What I learned
 TODO
