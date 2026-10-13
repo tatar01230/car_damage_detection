@@ -1,6 +1,6 @@
 id: E4
 model: yolo11n.pt
-# Data audit: 58% of images have a longest side < 320 px and boxes are large (median 12.6% of
+# Data audit: 58% of images have a longest side < 320 px and boxes are large (median 12.5% of
 # the image), so training at 640 mostly upsamples. Test whether 416 keeps accuracy at lower cost.
 purpose: training config - imgsz 416 vs 640 (compare with E2)
 train:

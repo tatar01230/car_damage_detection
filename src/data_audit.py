@@ -116,7 +116,9 @@ def load_dataset(root: Path, names: list[str]) -> tuple[list[dict], list[str]]:
         image_dir, label_dir = root / split / "images", root / split / "labels"
         if not image_dir.is_dir():
             continue
-        images = sorted(p for p in image_dir.iterdir() if p.suffix.lower() in IMAGE_EXTS)
+        # Sort by the plain file name: WindowsPath sorts case-insensitively, PosixPath does not,
+        # and the record order feeds the seeded shuffle in clean_data (split must match on Colab).
+        images = sorted((p for p in image_dir.iterdir() if p.suffix.lower() in IMAGE_EXTS), key=lambda p: p.name)
         image_stems = {p.stem for p in images}
         orphan_labels += [str(p) for p in label_dir.glob("*.txt") if p.stem not in image_stems]
 

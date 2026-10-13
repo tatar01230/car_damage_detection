@@ -49,32 +49,32 @@ corrupted files, and image/box size distributions. `src/clean_data.py` applies t
 writes a new dataset version. Full reports: [`reports/data_audit/raw`](reports/data_audit/raw/audit.md)
 and [`reports/data_audit/clean`](reports/data_audit/clean/audit.md).
 
-**What the audit found in the raw export (3,051 images, 4,727 boxes):**
+**What the audit found in the raw export (3,058 images, 4,747 boxes):**
 
 | Finding | Count | Action |
 |---|---|---|
-| Near-duplicate images (pHash distance ≤ 10) | 151 groups, 169 redundant images | Keep one per group (most boxes, then highest resolution) |
+| Near-duplicate images (pHash distance ≤ 10) | 152 groups, 170 redundant images | Keep one per group (most boxes, then highest resolution) |
 | …of which span different splits (train/valid/test **leakage**) | 65 groups | Removed by de-duplication + re-split |
 | …of which the copies are labeled differently | 44 groups | Same as above. This shows annotation inconsistency |
-| Images with an empty label file | 70 (69 of the 78 test images) | Dropped. Visual check: they show clear damage, so labels are missing |
+| Images with an empty label file | 70 (69 of the 79 test images) | Dropped. Visual check: they show clear damage, so labels are missing |
 | Degenerate boxes (< 2 px side) | 3 | Dropped |
 | Duplicate boxes (same class, IoU ≥ 0.9) | 1 | Dropped |
 | `Bodypanel-Dent` class | 1 instance (a degenerate box) | Class removed → 16 classes |
 | Corrupted images / unknown class ids / out-of-bounds boxes | 0 | — |
 
-The original test split was effectively unusable: 78 images, but only 12 boxes.
+The original test split was effectively unusable: 79 images, but only 13 boxes.
 
 **Before → after**
 
 | | Raw | Clean |
 |---|---|---|
-| Images | 3,051 | 2,821 |
-| Boxes | 4,727 | 4,510 |
+| Images | 3,058 | 2,827 |
+| Boxes | 4,747 | 4,527 |
 | Classes | 17 | 16 |
-| Split (train / val / test images) | 2,296 / 677 / 78 | 1,993 / 421 / 407 |
-| Test boxes | 12 | 681 |
+| Split (train / val / test images) | 2,301 / 678 / 79 | 1,976 / 424 / 427 |
+| Test boxes | 13 | 681 |
 | Cross-split near-duplicate groups | 65 | 0 |
-| Imbalance (largest / smallest class) | 809 | 34.7 |
+| Imbalance (largest / smallest class) | 812 | 35.0 |
 
 **Key decisions**
 
@@ -85,15 +85,21 @@ The original test split was effectively unusable: 78 images, but only 12 boxes.
   repeat across *different* photos, which I checked visually.
 - **Re-split 70/15/15, seed 42, stratified on each image's rarest class** so that rare classes
   (`pillar-dent`, `Signlight-Damage`) still appear in val/test. Running the cleaning script twice
-  produces an identical `manifest.csv`.
+  produces an identical `manifest.csv`, and the Colab notebook checks its MD5 against the local
+  build before training.
+- **Cross-platform reproducibility bugs caught by that checksum.** (1) Extracting the Roboflow zip
+  with Windows Explorer silently skipped 7 images whose paths exceeded 260 characters.
+  `download_data.py` now checks the image count against Roboflow's README. (2) `WindowsPath`
+  sorts case-insensitively, while Linux sorts case-sensitively, so the seeded shuffle saw a
+  different order. Files are now sorted by plain name.
 
 **Things the audit surfaced that cleaning cannot fix** (they feed into Limitations):
 
-- **Low resolution.** 1,644 / 2,821 images (58%) have a longest side under 320 px (e.g. 259×194
-  thumbnails). 69% are under 640 px.
-- **Rare classes.** `pillar-dent` (28 boxes) and `Signlight-Damage` (22) leave only 3–5 test
+- **Low resolution.** 1,644 / 2,827 images (58%) have a longest side under 320 px (e.g. 259×194
+  thumbnails). 68% are under 640 px.
+- **Rare classes.** `pillar-dent` (28 boxes) and `Signlight-Damage` (22) leave only 3–4 test
   instances, so their per-class AP will be noisy.
-- **Label style.** Boxes are large (median box covers 12.6% of the image; no box is below 0.1%), so
+- **Label style.** Boxes are large (median box covers 12.5% of the image; no box is below 0.1%), so
   this is a coarse "damaged region per part" dataset, not a fine-grained scratch dataset. Some
   boxes are loose, and overlapping part classes are common (e.g. `Headlight-Damage` inside
   `front-bumper-dent`).

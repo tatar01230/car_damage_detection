@@ -11,6 +11,8 @@ Usage:
 
 import argparse
 import os
+import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -29,12 +31,24 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
 
 def summarize(root: Path) -> None:
-    """Print image/label counts for every split folder found in the download."""
+    """Print image/label counts per split and check the total against Roboflow's README.
+
+    The check exists because a manual zip extraction with Windows Explorer silently skipped
+    7 images whose paths exceeded 260 characters.
+    """
+    total = 0
     for split_dir in sorted(p for p in root.iterdir() if p.is_dir()):
         images = [p for p in (split_dir / "images").glob("*") if p.suffix.lower() in IMAGE_EXTS]
         labels = list((split_dir / "labels").glob("*.txt"))
         if images or labels:
             print(f"  {split_dir.name:<6} images={len(images):>5}  labels={len(labels):>5}")
+            total += len(images)
+
+    readme = root / "README.roboflow.txt"
+    match = re.search(r"includes (\d+) images", readme.read_text()) if readme.exists() else None
+    if match and int(match.group(1)) != total:
+        sys.exit(f"ERROR: found {total} images but Roboflow lists {match.group(1)}. Re-download with --force.")
+    print(f"  total  images={total:>5}" + (" (matches Roboflow README)" if match else ""))
 
 
 def main() -> None:
@@ -44,7 +58,7 @@ def main() -> None:
     parser.add_argument("--version", type=int, default=DEFAULT_VERSION)
     parser.add_argument("--format", default=DEFAULT_FORMAT)
     parser.add_argument("--out", type=Path, default=Path("data/raw/car-damage-v2"))
-    parser.add_argument("--force", action="store_true", help="re-download even if the folder exists")
+    parser.add_argument("--force", action="store_true", help="delete the folder and download again")
     args = parser.parse_args()
 
     out = args.out
@@ -59,6 +73,9 @@ def main() -> None:
         sys.exit("ROBOFLOW_API_KEY is not set. Copy .env.example to .env and add your key.")
 
     from roboflow import Roboflow  # imported late so --help works without the package
+
+    if out.exists():
+        shutil.rmtree(out)  # --force: start clean so no stale files survive
 
     rf = Roboflow(api_key=api_key)
     version = rf.workspace(args.workspace).project(args.project).version(args.version)
