@@ -20,7 +20,7 @@ from ultralytics import YOLO
 from src.severity import damage_severity, overall_severity
 
 LOCAL_WEIGHTS = Path("weights/car_damage_yolo11n_416.pt")
-HF_MODEL_REPO = os.getenv("HF_MODEL_REPO", "")  # e.g. "<hf-user>/car-damage-yolo11n"; set after upload
+HF_MODEL_REPO = os.getenv("HF_MODEL_REPO", "tatar01230/car-damage-yolo11n")
 HF_WEIGHTS_FILE = "car_damage_yolo11n_416.pt"
 DEFAULT_CONF = 0.30  # maximizes F1 on the val split (see README, Error analysis)
 

@@ -1,14 +1,10 @@
-"""Publish the final model and the Gradio demo to Hugging Face.
+"""Publish the final model to the Hugging Face Hub: weights + a model card with the test metrics.
 
-  - model repo  <user>/<model-name>: the weights + a model card with the test metrics
-  - Space       <user>/<space-name>: app/app.py, src/{predict,severity}.py, examples, configs.
-    Its HF_MODEL_REPO variable points to the model repo, so the Space downloads the weights at startup.
-
-Needs HF_TOKEN (write access) in the environment or the git-ignored .env file.
+The Streamlit demo and src/predict.py download the weights from this repo, so nothing large
+lives in Git. Needs HF_TOKEN (write access) in the environment or the git-ignored .env file.
 
 Usage:
     python -m src.publish_hf --user <hf-username>
-    python -m src.publish_hf --user <hf-username> --what space   # redeploy the app only
 """
 
 import argparse
@@ -73,35 +69,11 @@ def publish_model(api: HfApi, repo: str, weights: Path) -> None:
     print(f"Model: https://huggingface.co/{repo}")
 
 
-def publish_space(api: HfApi, repo: str, model_repo: str) -> None:
-    files = {
-        "app.py": "app/app.py",
-        "requirements.txt": "app/requirements.txt",
-        "packages.txt": "app/packages.txt",
-        "README.md": "app/README.md",
-        "src/__init__.py": "src/__init__.py",
-        "src/predict.py": "src/predict.py",
-        "src/severity.py": "src/severity.py",
-    }
-    files.update({f"examples/{p.name}": str(p) for p in sorted(Path("app/examples").glob("*.jpg"))})
-    api.create_repo(repo, repo_type="space", space_sdk="gradio", exist_ok=True)
-    api.add_space_variable(repo, "HF_MODEL_REPO", model_repo)
-    api.create_commit(
-        repo,
-        repo_type="space",
-        operations=[CommitOperationAdd(dst, src) for dst, src in files.items()],
-        commit_message="Deploy Gradio demo",
-    )
-    print(f"Space: https://huggingface.co/spaces/{repo} (first build takes a few minutes)")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--user", required=True, help="Hugging Face username or org")
     parser.add_argument("--model-name", default="car-damage-yolo11n")
-    parser.add_argument("--space-name", default="car-damage-detection")
     parser.add_argument("--weights", type=Path, default=Path("runs/E4/weights/best.pt"))
-    parser.add_argument("--what", choices=["all", "model", "space"], default="all")
     args = parser.parse_args()
 
     load_dotenv()
@@ -109,11 +81,7 @@ def main() -> None:
     if not token:
         sys.exit("HF_TOKEN is not set. Add a write token to .env (see .env.example).")
     api = HfApi(token=token)
-    model_repo = f"{args.user}/{args.model_name}"
-    if args.what in ("all", "model"):
-        publish_model(api, model_repo, args.weights)
-    if args.what in ("all", "space"):
-        publish_space(api, f"{args.user}/{args.space_name}", model_repo)
+    publish_model(api, f"{args.user}/{args.model_name}", args.weights)
 
 
 if __name__ == "__main__":

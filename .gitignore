@@ -25,3 +25,6 @@ Thumbs.db
 
 # Local prediction outputs
 outputs/
+
+# Local Claude Code / editor launch config
+.claude/

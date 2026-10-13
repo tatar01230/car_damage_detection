@@ -11,7 +11,7 @@ detections into a simple insurance-claim style report.
 TODO (Day 7)
 
 ## Demo
-TODO (Day 6): Hugging Face Spaces link + screenshot/GIF
+Live demo (Streamlit Community Cloud): TODO, link after deployment. Screenshot/GIF: TODO (Day 7)
 
 ## Dataset
 
@@ -213,7 +213,7 @@ cracks), which is this case.
 
 **Final model: E4 (YOLO11n, imgsz 416).** Its accuracy is within noise of the best run (-0.006
 mAP50-95 vs E2, +0.015 mAP50), and it is the fastest on CPU (16.4 ms vs 28.4 ms), has the fewest
-FLOPs, is 5.2 MB, and trained 32% faster. The demo will run on CPU (free Hugging Face Space), so CPU
+FLOPs, is 5.2 MB, and trained 32% faster. The demo runs on CPU (free Streamlit Community Cloud), so CPU
 latency is the deciding factor. YOLO11s brings no measurable accuracy gain for 3.6x the size and
 ~3.5x the CPU latency of E4.
 
@@ -350,18 +350,28 @@ python -m src.error_analysis --run E4  # FP/FN categories + example sheets -> re
 
 ```bash
 python -m src.predict car.jpg --weights runs/E4/weights/best.pt   # -> outputs/car_annotated.jpg + car.json
-python app/app.py                                                 # Gradio demo at http://127.0.0.1:7860
+streamlit run app/streamlit_app.py                                # demo at http://localhost:8501
 ```
 
 Without `--weights`, `predict.py` and the app use `weights/car_damage_yolo11n_416.pt` if it
-exists. Otherwise they download the weights from the Hugging Face model repo named in the
-`HF_MODEL_REPO` environment variable.
+exists. Otherwise they download it from the Hugging Face model repo
+[tatar01230/car-damage-yolo11n](https://huggingface.co/tatar01230/car-damage-yolo11n). Set the
+`HF_MODEL_REPO` environment variable to use a different repo.
 
-**Publish to Hugging Face** (model repo + Gradio Space; needs a write `HF_TOKEN` in `.env`):
+**Publish the weights to Hugging Face** (needs a write `HF_TOKEN` in `.env`):
 
 ```bash
-python -m src.publish_hf --user <hf-username>
+python -m src.publish_hf --user <hf-username>   # weights + model card
 ```
+
+**Deploy the demo (Streamlit Community Cloud, free).** At https://share.streamlit.io, sign in with
+GitHub, then choose *Create app* → this repo, branch `main`, main file `app/streamlit_app.py`,
+and Python 3.12 under *Advanced settings*. Cloud dependencies are in
+[`app/requirements.txt`](app/requirements.txt) (CPU-only PyTorch) and system packages are in
+[`packages.txt`](packages.txt). The app downloads the weights from the Hugging Face model repo on first start.
+
+Why not a Hugging Face Space: as of October 2026, Hugging Face refuses to create Gradio/Docker
+Spaces on the free CPU tier for non-PRO accounts (`402 Payment Required`).
 
 ## Limitations
 - **One seed per experiment.** Differences of about 0.01 mAP50-95 between runs are within noise.
@@ -372,7 +382,7 @@ python -m src.publish_hf --user <hf-username>
   are visible in the error analysis, so test metrics partly measure label quality.
 - **Rare classes are effectively unsupported.** `pillar-dent` and `Signlight-Damage` were never
   detected on test (3-4 boxes each).
-- **Latency numbers are from a desktop CPU/GPU.** A Hugging Face free CPU Space will be slower.
+- **Latency numbers are from a desktop CPU/GPU.** The free Streamlit Cloud machine will be slower.
 - **Severity is rule-based** and uses box area relative to the image, which depends on camera distance.
 - TODO (Day 7)
 

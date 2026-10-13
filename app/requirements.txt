@@ -1,3 +1,9 @@
-# Hugging Face Space dependencies (gradio itself comes from sdk_version in README.md)
+# Streamlit Community Cloud dependencies (picked up because this file sits next to the entrypoint).
+# CPU-only PyTorch wheels: the default Linux wheels bundle CUDA (several GB), which the
+# free cloud machine neither needs nor has room for.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.11.0+cpu
+torchvision==0.26.0+cpu
 ultralytics==8.4.176
+streamlit==1.65.0
 huggingface_hub>=0.30

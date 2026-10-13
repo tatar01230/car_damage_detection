@@ -9,5 +9,5 @@ imagehash>=4.3
 numpy>=2.0  # np.bitwise_count in the duplicate finder
 pandas>=2.2
 matplotlib>=3.9
-gradio>=6.30
+streamlit==1.65.0
 huggingface_hub>=0.30
